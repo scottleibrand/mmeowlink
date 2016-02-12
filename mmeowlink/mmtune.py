@@ -6,34 +6,42 @@ from mmeowlink.exceptions import CommsException,InvalidPacketReceived
 from mmeowlink.vendors.subg_rfspy_link import SubgRfspyLink
 
 class MMTune:
-  DEFAULT_FREQ = 916.630
+  FREQ_RANGES = {
+    'US': { 'start': 916.5, 'end': 916.9, 'default': 916.630 },
+    'WW': { 'start': 867.5, 'end': 868.5, 'default': 868.328 }
+  }
 
-  def __init__(self, link, pumpserial):
+  def __init__(self, link, pumpserial, locale='US'):
     self.link = link
     self.pumpserial = pumpserial
+    self.locale = locale
+    self.scan_range = self.FREQ_RANGES[self.locale]
 
   def run(self):
-    self.link.update_register(SubgRfspyLink.REG_MDMCFG4, 0xd9)
-
-
-    # Sometimes getting lower ber with 0x07 here (default is 0x03)
-    self.link.update_register(SubgRfspyLink.REG_AGCCTRL2, 0x07)
-
-    self.link.update_register(SubgRfspyLink.REG_AGCCTRL1, 0x40)
-
-    # With rx bw > 101kzHZ, this should be 0xB6, otherwise 0x56
-    self.link.update_register(SubgRfspyLink.REG_FREND1, 0x56)
-
-    # default (0x91) seems to work best
-    #self.link.update_register(SubgRfspyLink.REG_AGCCTRL0, 0x91)
+    ############################################################################
+    # Commented these out as they may be causing issues with certain pumps:
+    ############################################################################
+    # self.link.update_register(SubgRfspyLink.REG_MDMCFG4, 0xd9)
+    #
+    # # Sometimes getting lower ber with 0x07 here (default is 0x03)
+    # self.link.update_register(SubgRfspyLink.REG_AGCCTRL2, 0x07)
+    #
+    # self.link.update_register(SubgRfspyLink.REG_AGCCTRL1, 0x40)
+    #
+    # # With rx bw > 101kzHZ, this should be 0xB6, otherwise 0x56
+    # self.link.update_register(SubgRfspyLink.REG_FREND1, 0x56)
+    #
+    # # default (0x91) seems to work best
+    # #self.link.update_register(SubgRfspyLink.REG_AGCCTRL0, 0x91)
 
     #print "waking..."
     self.wakeup()
 
     #print "scanning..."
-    results = self.scan_over_freq(916.5, 916.9, 20)
+    results = self.scan_over_freq(self.scan_range['start'], self.scan_range['end'], 20)
     results_sorted = list(reversed(sorted(results, key=lambda x: x[1:])))
-    set_freq = self.DEFAULT_FREQ
+
+    set_freq = self.scan_range['default']
     used_default = True
     if results_sorted[0][1] > 0:
       used_default = False
@@ -49,16 +57,16 @@ class MMTune:
     rssi_readings = []
     for i in xrange(sample_size):
       self.send_packet("a7" + self.pumpserial + "8d00") # Get Model
-      try: 
+      try:
         packet = self.get_packet(0.080)
         success_count += 1
         rssi_readings.append(packet["rssi"])
       except (CommsException,InvalidPacketReceived):
         error_count += 1
         rssi_readings.append(-99)
-  
+
     avg_rssi = sum(rssi_readings)/len(rssi_readings)
-    
+
     #print "%s, %d, rssi:%0.1f" % (var, error_count, avg_rssi)
     return [var, success_count, avg_rssi]
 
@@ -89,7 +97,7 @@ class MMTune:
       try:
         packet = self.get_packet(0.08)
         #print "packet = " + str(packet)
-      except (CommsException, InvalidPacketReceived): 
+      except (CommsException, InvalidPacketReceived):
         packet = None
         #print "No response..."
         pass
@@ -100,7 +108,7 @@ class MMTune:
 
     if awake != True:
       # Pump in free space
-      self.link.set_base_freq(self.DEFAULT_FREQ)
+      self.link.set_base_freq(self.scan_range['default'])
 
       # Send 200 wake-up packets
       self.send_packet("a7" + self.pumpserial + "5d00", 200)
@@ -110,4 +118,3 @@ class MMTune:
         wake_ack = None
         #print "No response..."
         pass
-
