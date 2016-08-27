@@ -30,6 +30,7 @@
 
 import os
 import serial
+import spi_serial
 import time
 from .. exceptions import CommsException
 import logging
@@ -66,11 +67,13 @@ class SerialRfSpy:
 
     self.ser.write_timeout = timeout
 
-    self.ser.write(chr(command))
-    log.debug("command %d" % command)
-    if len(param) > 0:
-      log.debug("params: %s" % str(param).encode('hex'))
-      self.ser.write(param)
+    cmd_str = chr(command) + param
+
+    self.ser.write(cmd_str)
+    log.debug("command: " + cmd_str)
+    #if len(param) > 0:
+    #  log.debug("params: %s" % str(param).encode('hex'))
+    #  self.ser.write(param)
 
     self.ser.write_timeout = self.default_write_timeout
 
