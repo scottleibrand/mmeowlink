@@ -30,7 +30,8 @@
 
 import os
 import serial
-import spi_serial
+# if this is needed, we need to import it conditionally to not break backwards compatibility
+#import spi_serial
 import time
 from .. exceptions import CommsException
 import logging
