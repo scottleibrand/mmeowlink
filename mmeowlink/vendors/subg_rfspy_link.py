@@ -67,8 +67,6 @@ class SubgRfspyLink(SerialInterface):
 
   def check_setup(self):
     self.serial_rf_spy = SerialRfSpy(self.serial)
-    #TODO: figure out how to make this conditional on spi
-    # is it as simple as this?
     if self.device.find('spi') >= 0:
         self.serial_rf_spy.do_command(SerialRfSpy.CMD_RESET, param="", timeout=1)
     self.serial_rf_spy.sync()
