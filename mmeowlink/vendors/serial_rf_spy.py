@@ -57,6 +57,8 @@ class SerialRfSpy:
 
   def do_command(self, command, param="", timeout=0):
     self.send_command(command, param, timeout=timeout)
+    if command == self.CMD_RESET:
+	time.sleep(1)
     return self.get_response(timeout=timeout)
 
   def send_command(self, command, param="", timeout=1):
