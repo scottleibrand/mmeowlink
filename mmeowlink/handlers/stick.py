@@ -216,10 +216,12 @@ class Pump (session.Pump):
 
       status = repeater(self.command, repetitions=500, ack_wait_seconds=12)
 
-      if status:
-        return True
-      else:
-        raise CommsException("No acknowledgement from pump on wakeup. Is it out of range or is the battery too low?")
+      # If wakeup fails, we might as well try to continue anyway
+      return True
+      #if status:
+        #return True
+      #else:
+        #raise CommsException("No acknowledgement from pump on wakeup. Is it out of range or is the battery too low?")
 
   def execute (self, command):
     command.serial = self.serial
